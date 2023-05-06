@@ -2,6 +2,17 @@ import numpy as np
 from utils_pset import Data_Frame
 
 
+def action_equality(a1, a2):
+    for i in range(len(a1)):
+        if a1[i] != a2[i]:
+            return False
+
+
+def reward_equality(r1, r2):
+    for i in range(len(r1)):
+        if r1[i] != r2[i]:
+            return False
+
 def temporal_cohesion_sol(batch, mapping):
     """
     computes the gradient of the temporal cohesion loss on the given batch of state representation
@@ -47,7 +58,7 @@ def proportionality_prior_sol(batch, mapping):
     pairings = 0
     for i in range(0, time_steps - 1):
         for j in range(i+1,time_steps - 1):
-            if batch[i].action == batch[j].action:
+            if action_equality(batch[i].action, batch[j].action):
                 pairings += 1
                 loss_grad = proportional_loss_gradient(batch[i].image, batch[i + 1].image, batch[j].image, batch[j+1].image, mapping)
                 total_loss_grad += loss_grad.reshape(mapping.shape)
@@ -92,7 +103,7 @@ def causality_prior_sol(batch, mapping):
 
         for j in range(i + 1, time_steps - 1):
             pairings += 1
-            if batch[i].action == batch[j].action and batch[i].reward != batch[j].reward:
+            if action_equality(batch[i].action, batch[j].action) and reward_equality(batch[i].reward, batch[j].reward):
                 loss_grad = causal_loss_gradient(batch[i].image, batch[j].image,
                                                 mapping)
                 total_loss_grad += loss_grad.reshape(mapping.shape)
