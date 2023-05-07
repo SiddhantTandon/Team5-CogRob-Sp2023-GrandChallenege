@@ -10,6 +10,11 @@ from loss_functions import temporal_cohesion_sol
 from loss_functions import proportionality_prior_sol
 from loss_functions import causality_prior_sol
 from loss_functions import repeatability_prior_sol
+from loss_functions import temporal_loss
+from loss_functions import proportional_loss
+from loss_functions import causal_loss
+from loss_functions import repeatability_loss
+from loss_functions import multi_agent_loss
 from loss_functions import multi_prior_sol
 
 #### training set function call ####
@@ -32,27 +37,27 @@ def main():
 
     # Weight matrix setup
     agent_dim = 2 * 2 # each agent has 2D-SPACE: x-coordinate, y-coordinate
-    W = np.random.uniform(0,10,[agent_dim,100])
+    W = np.random.uniform(0,1,[agent_dim,100])
 
     # gradient descent loop
     for i in range(0, args.iterations):
 
         total_loss = 0
         # get temporal loss
-        temp_loss = temporal_cohesion_sol(batch, W)
-        total_loss += temp_loss
+        temp_loss_grad = temporal_cohesion_sol(batch, W)
+        total_loss += temp_loss_grad
 
         # get proportionality
-        prop_loss = proportionality_prior_sol(batch,W)
-        total_loss += prop_loss
+        prop_loss_grad = proportionality_prior_sol(batch,W)
+        total_loss += prop_loss_grad
 
         # get causality loss
-        causal_loss = causality_prior_sol(batch,W)
-        total_loss += causal_loss
+        causal_loss_grad = causality_prior_sol(batch,W)
+        total_loss += causal_loss_grad
 
         # get repeatability loss
-        repeat_loss = repeatability_prior_sol(batch,W)
-        total_loss += repeat_loss
+        repeat_loss_grad = repeatability_prior_sol(batch,W)
+        total_loss += repeat_loss_grad
 
         # get multi prior loss
         multi_loss = multi_prior_sol(batch,W)
@@ -61,8 +66,19 @@ def main():
         # update weights
         W = W - args.alpha * total_loss
 
+        t_loss = temporal_loss(batch,W)
+        p_loss = proportional_loss(batch,W)
+        c_loss = causal_loss(batch,W)
+        r_loss = repeatability_loss(batch,W)
+        m_loss = multi_agent_loss(batch,W)
+        loss_total = t_loss + p_loss + c_loss + r_loss + m_loss
+
         # are we reducing loss?
-        print(i, np.sum(total_loss))
+        print("{}: {}_t + {}_p + {}_c + {}_r + {}_m = {}".format(i, t_loss, p_loss, c_loss, r_loss, m_loss, loss_total))
+        print("temp: {}\nprop: {}\nCausal: {}\nRepeat: {}".format(np.isnan(temp_loss_grad).any(),
+                                                                  np.isnan(prop_loss_grad).any(),
+                                                                  np.isnan(causal_loss_grad).any(),
+                                                                  np.isnan(repeat_loss_grad).any()))
 
     # coordinates learnt
     y = W.dot(X)

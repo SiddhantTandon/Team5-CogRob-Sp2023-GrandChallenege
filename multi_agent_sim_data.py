@@ -7,7 +7,7 @@ import math
 
 class DataFrame():
     def __init__(self, image_array, agent_actions, agent_rewards, agent_states):
-        self.image = image_array
+        self.image = (255-image_array)/255
         self.action = agent_actions
         self.reward = agent_rewards
         self.states = agent_states
