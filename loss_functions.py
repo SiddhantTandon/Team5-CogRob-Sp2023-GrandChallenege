@@ -36,7 +36,7 @@ def proportional_loss(batch,mapping):
                 total_loss += (delta2- delta1)**2
     if pairings == 0:
         return 0
-    return total_loss/pairings
+    return total_loss/time_steps
 
 def causal_loss(batch,mapping):
     time_steps = len(batch)
@@ -52,7 +52,7 @@ def causal_loss(batch,mapping):
 
     if pairings == 0:
         return 0
-    return total_loss/pairings
+    return total_loss/time_steps
 
 def repeatability_loss(batch,mapping):
     time_steps = len(batch)
@@ -68,7 +68,7 @@ def repeatability_loss(batch,mapping):
                 total_loss += causal_part*(np.linalg.norm(delta2 - delta1)**2)
     if pairings == 0:
         return 0
-    return total_loss/pairings
+    return total_loss/time_steps
 
 def multi_agent_loss(batch,mapping):
     time_steps = len(batch)
@@ -79,12 +79,27 @@ def multi_agent_loss(batch,mapping):
             counter += 1
             delta1 = (mapping @ batch[i + 1].image)[0:2] - (mapping @ batch[i].image)[0:2]
             delta2 = (mapping @ batch[i + 1].image)[2:4] - (mapping @ batch[i].image)[2:4]
-            total_loss += np.exp(-np.linalg.norm(delta2 - delta1))
+            total_loss += np.exp(-np.linalg.norm(delta2 - delta1)**2)
 
     if counter == 0:
         return 0
     return total_loss / counter
 
+def multi_agent_loss_same_act(batch,mapping):
+    time_steps = len(batch)
+    total_loss = 0
+    counter = 0
+    for i in range(0, time_steps - 1):
+        for j in range(0, time_steps - 1):
+            if batch[i].action[0] == batch[j].action[1]:
+                counter += 1
+                delta1 = (mapping @ batch[i + 1].image)[0:2] - (mapping @ batch[i].image)[0:2]
+                delta2 = (mapping @ batch[j + 1].image)[2:4] - (mapping @ batch[j].image)[2:4]
+                total_loss += np.sum((delta2 - delta1) ** 2)
+
+    if counter == 0:
+        return 0
+    return total_loss / counter
 
 
 def temporal_cohesion_sol(batch, mapping):
@@ -182,7 +197,7 @@ def causality_prior_sol(batch, mapping):
                 pairings += 1
                 total_loss_grad += loss_grad.reshape(mapping.shape)
 
-    print("pairings: {}".format(pairings))
+    #print("pairings: {}".format(pairings))
     if pairings == 0:
         return np.zeros(mapping.shape)
     return total_loss_grad / pairings
@@ -255,6 +270,21 @@ def multi_prior_sol(batch, mapping):
         return np.zeros(mapping.shape)
     return total_loss_grad/counter
 
+def multi_same_prior_sol(batch, mapping):
+    time_steps = len(batch)
+    total_loss_grad = np.zeros(mapping.shape)
+    pairings = 0
+
+    for i in range(0, time_steps - 1):
+        for j in range(0,time_steps - 1):
+            if batch[i].action[0] == batch[j].action[1]:
+                pairings += 1
+                loss_grad = multi_loss_gradient_same_act(batch[i].image, batch[i + 1].image, batch[j].image, batch[j+1].image, mapping)
+                total_loss_grad += loss_grad.reshape(mapping.shape)
+    if pairings ==0:
+        return 0
+    return total_loss_grad / pairings
+
 
 def multi_loss_gradient(s1, s2, mapping):
 
@@ -265,12 +295,29 @@ def multi_loss_gradient(s1, s2, mapping):
 
     deltadelta = delta[0:2] - delta[2:4]
     squared = np.multiply(deltadelta, deltadelta)
-    expon = -squared[0] - squared[1]
+    expon = -np.sqrt(squared[0] + squared[1])
     for i in range(0,dims[0]):
-        outer = deltadelta[i % 2]
+        outer = deltadelta[i%2]
         for j in range(0, dims[1]):
             individual = s1[j] - s2[j]
             output[i,j] = 2*np.exp(expon)*outer*individual
+    return output
+
+def multi_loss_gradient_same_act(s1, s2, s3, s4, mapping):
+    #TODO: finish math on this
+    dims = mapping.shape
+    output = np.zeros(dims)
+    delta1 = (mapping@s2 - mapping@s1)
+    delta2 = (mapping@s4 - mapping@s3)
+    deltadelta = delta1[0:2] - delta2[2:4]
+    for i in range(0, dims[0]):
+        outer = deltadelta[i%2]
+        for j in range(0, dims[1]):
+            inner = s2[j] - s1[j]
+            if i >= 2:
+                inner = s3[j] - s4[j]
+            output[i,j] = 2 * (inner) * outer
+
     return output
 
 
@@ -284,11 +331,16 @@ if __name__ == "__main__":
     frame2 = DataFrame(np.array([2, 3]), 4, 2, image2)
     frame3 = DataFrame(np.array([2, 1]), 4, 1, image3)
     frame4 = DataFrame(np.array([2, 4]), 4, 2, image4)
-    multiframe1 = DataFrame(np.array([1, 2]), (4,4), 1, image1)
-    multiframe2 = DataFrame(np.array([1, 2]), (4,4), 1, image2)
+    multiframe1 = DataFrame(image1, (1,2), np.array([1, 2]), 1)
+    multiframe2 = DataFrame(image2, (3,4), np.array([1, 2]),  1)
+    multiframe3 = DataFrame(image3, (3,1), np.array([1, 2]),  1)
+    multiframe4 = DataFrame(image4, (3,4), np.array([1, 2]),  1)
+
     mapping = np.arange(16).reshape((4, 4))
-    mapping[0,2] = 0
-    mapping[0,1] = 0
+    #mapping[0,2] = 0
+    #mapping[0,1] = 0
     print(mapping)
-    print(multi_prior_sol([multiframe1, multiframe2], mapping))
+    print(mapping@image2-mapping@image1)
+    print(mapping@image4-mapping@image3)
+    print(multi_same_prior_sol([multiframe1, multiframe2, multiframe3, multiframe4], mapping))
 

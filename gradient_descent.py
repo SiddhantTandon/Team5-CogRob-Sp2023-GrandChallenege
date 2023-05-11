@@ -15,7 +15,9 @@ from loss_functions import proportional_loss
 from loss_functions import causal_loss
 from loss_functions import repeatability_loss
 from loss_functions import multi_agent_loss
+from loss_functions import multi_agent_loss_same_act
 from loss_functions import multi_prior_sol
+from loss_functions import multi_same_prior_sol
 
 #### training set function call ####
 from multi_agent_sim_data import Two_Agent_Exchange_Location_Scenario
@@ -60,7 +62,10 @@ def main():
         total_loss += repeat_loss_grad
 
         # get multi prior loss
-        multi_loss = multi_prior_sol(batch,W)
+        #multi_loss = multi_prior_sol(batch,W)
+        #total_loss += multi_loss
+
+        multi_loss = multi_same_prior_sol(batch, W)
         total_loss += multi_loss
 
         # update weights
@@ -70,19 +75,20 @@ def main():
         p_loss = proportional_loss(batch,W)
         c_loss = causal_loss(batch,W)
         r_loss = repeatability_loss(batch,W)
-        m_loss = multi_agent_loss(batch,W)
+        m_loss = multi_agent_loss_same_act(batch,W)
         loss_total = t_loss + p_loss + c_loss + r_loss + m_loss
 
         # are we reducing loss?
-        print("{}: {}_t + {}_p + {}_c + {}_r + {}_m = {}".format(i, t_loss, p_loss, c_loss, r_loss, m_loss, loss_total))
-        print("temp: {}\nprop: {}\nCausal: {}\nRepeat: {}".format(np.isnan(temp_loss_grad).any(),
-                                                                  np.isnan(prop_loss_grad).any(),
-                                                                  np.isnan(causal_loss_grad).any(),
-                                                                  np.isnan(repeat_loss_grad).any()))
+        if i % 100 == 0:
+            print("{}: {}_t + {}_p + {}_c + {}_r + {}_m = {}".format(i, t_loss, p_loss, c_loss, r_loss, m_loss, loss_total))
+        #print("temp: {}\nprop: {}\nCausal: {}\nRepeat: {}".format(np.isnan(temp_loss_grad).any(),
+        #                                                          np.isnan(prop_loss_grad).any(),
+        #                                                          np.isnan(causal_loss_grad).any(),
+        #                                                          np.isnan(repeat_loss_grad).any()))
 
     # coordinates learnt
-    y = W.dot(X)
-    print(y[0][:])
+    y = W.dot((255-X)/255)
+    print(y)
 
     # save weight
     print("Saving weights ... ")
