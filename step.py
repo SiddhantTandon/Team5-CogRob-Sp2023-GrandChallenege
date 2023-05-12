@@ -32,8 +32,8 @@ def step(current_state, goal_state, actions, reward_fcn):
     #encodes violations to the state space
     
     #initialize array for updated state
-    next_state = np.zeros(current_state.shape)
-    
+    #next_state = np.zeros(current_state.shape)
+    next_state = current_state
     for agent, agent_pos in enumerate(current_state):
         action = actions[agent]
         
@@ -127,7 +127,7 @@ def if_equal_positions(state):
                 return True
             
             else:
-                print("All Clear!")
+                #print("All Clear!")
                 return False
             
 

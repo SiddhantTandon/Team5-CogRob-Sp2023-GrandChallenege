@@ -23,7 +23,7 @@ class Two_Agent_Exchange_Location_Scenario(DataFrame):
         pg = [goal_x, goal_y]
         pa = [x,y]
         dist = math.dist(pg,pa)
-        d = float(1/dist)
+        d = float(1/(dist+1))
         reward = np.log(d)
         return reward
 
