@@ -43,6 +43,7 @@ class QLearner_Sim:
                 done = False
         #print("step with action: {} from {} gave reward {}".format(as_str, self.current_states, reward))
         self.current_states = new_state
+        #TODO: set out to be the coordintate points of the agents
         out = self.mapping @ out_img.flatten()
         return out, reward[0]+reward[1], done, {"time_limit": self.t >= self.max_steps}
 
@@ -73,6 +74,7 @@ class QLearner_Sim:
             obs = self.mapping @ out_img.flatten()
             action = best_action(obs)
             next_obs, reward, done, info = self.step(action)
+            #TODO: make sure obs and next_obs are the coordinate points of the agents
             rollout.append((obs, action, reward, next_obs, done))
             i += 1
         return rollout
@@ -81,6 +83,7 @@ def format_rollout(batch, mapping):
     rollouts = []
     for i in range(0,len(batch)-1):
         action_int = batch[i].action[0]*4 + batch[i].action[1]
+        #TODO: make sure first and fourth entry of tuple are the coordinate points of the agents
         rollouts.append((mapping @ batch[i].image, action_int, batch[i].reward[0] + batch[i].reward[1], mapping @ batch[i+1].image, False))
     return rollouts
 
