@@ -94,7 +94,7 @@ def reward_fcn(next_state, goal_state):
     
     #compute:
     for idx, state in enumerate(next_state):
-        reward[idx] = np.log(np.linalg.norm(state - goal_state[idx]))
+        reward[idx] = np.log(1/np.linalg.norm(state - goal_state[idx]))
         
     return reward
 
