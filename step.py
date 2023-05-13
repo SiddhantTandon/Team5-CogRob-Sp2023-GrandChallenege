@@ -10,7 +10,7 @@ taking the actions is implemented and applied here
 """
 import numpy as np
 
-def step(current_state, goal_state, actions, reward_fcn):
+def step(current_state, goal_state, actions, reward_fcn, size):
     """
     Determines the next state and reward from taking an action from a current state for each agent
     Implement following line to call fcn: next_state, reward = step(current_state, goal_state, actions, reward_fcn)
@@ -21,6 +21,7 @@ def step(current_state, goal_state, actions, reward_fcn):
     goal_state: numpy nd array of the target (x,y) positions for each agent
     actions: list of single actions for each agent
     reward_fcn: function computing the reward value for taking an action
+    size: tuple (x,y) identifying the dimensions of the state space
     
     Returns:
     --------
@@ -32,14 +33,14 @@ def step(current_state, goal_state, actions, reward_fcn):
     #encodes violations to the state space
     
     #initialize array for updated state
-    #next_state = np.zeros(current_state.shape)
-    next_state = current_state
+    next_state = np.zeros(current_state.shape)
+    
     for agent, agent_pos in enumerate(current_state):
         action = actions[agent]
         
         # "UP" Action:
         if action == "up":
-            if agent_pos[0] == 9: #check is movement violates state space bound
+            if agent_pos[0] == size[1]: #check is movement violates state space bound
                 break
             else:
                 next_state[agent] = agent_pos+(1,0) #determine next state
@@ -60,7 +61,7 @@ def step(current_state, goal_state, actions, reward_fcn):
         
         # "RIGHT" Action:
         if action == "right":
-            if agent_pos[1] == 9:
+            if agent_pos[1] == size[0]:
                 break
             else:
                 next_state[agent] = agent_pos+(0,1)
@@ -94,7 +95,7 @@ def reward_fcn(next_state, goal_state):
     
     #compute:
     for idx, state in enumerate(next_state):
-        reward[idx] = np.log(np.linalg.norm(state - goal_state[idx]))
+        reward[idx] = np.log(1/np.linalg.norm(state - goal_state[idx]))
         
     return reward
 
