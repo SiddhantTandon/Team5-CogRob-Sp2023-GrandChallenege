@@ -28,7 +28,7 @@ class QLearner_Sim:
     def step(self, action):
         self.t += 1
         as_str = self.action_to_str(action)
-        new_state, reward = self.step_fun(self.current_states, self.goal_states, as_str, self.reward_fun)
+        new_state, reward = self.step_fun(self.current_states, self.goal_states, as_str, self.reward_fun,size=(5,5))
         if new_state is None:
             new_state = self.current_states
             reward = (0,0)
