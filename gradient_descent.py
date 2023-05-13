@@ -4,6 +4,7 @@
 import numpy as np # array manipulation
 import argparse  # cli for user
 import random
+import time
 
 #### loss function calls ####
 from loss_functions import temporal_cohesion_sol
@@ -33,17 +34,18 @@ def main():
     args = parser.parse_args()
 
     # train data setup
-    goals = [[9,9],[0,0]]
+    goals = [[4,4],[0,0]]
     ma = Two_Agent_Exchange_Location_Scenario(goals)
-    batch, X = ma.simulate_function(10, 20) # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
+    batch, X = ma.simulate_function(5, 1000) # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
 
     # Weight matrix setup
     agent_dim = 2 * 2 # each agent has 2D-SPACE: x-coordinate, y-coordinate
-    W = np.random.uniform(0,1,[agent_dim,100])
+    W = np.random.uniform(0,1,[agent_dim,25])
 
+    start = time.time()
     # gradient descent loop
     for i in range(0, args.iterations):
-
+        ep_time = time.time()
         total_loss = 0
         # get temporal loss
         temp_loss_grad = temporal_cohesion_sol(batch, W)
@@ -79,22 +81,23 @@ def main():
         loss_total = t_loss + p_loss + c_loss + r_loss + m_loss
 
         # are we reducing loss?
-        if i % 100 == 0:
-            print("{}: {}_t + {}_p + {}_c + {}_r + {}_m = {}".format(i, t_loss, p_loss, c_loss, r_loss, m_loss, loss_total))
+        # if i % 100 == 0:
+        print("{}: {}_t + {}_p + {}_c + {}_r + {}_m = {}".format(i, t_loss, p_loss, c_loss, r_loss, m_loss, loss_total))
         #print("temp: {}\nprop: {}\nCausal: {}\nRepeat: {}".format(np.isnan(temp_loss_grad).any(),
         #                                                          np.isnan(prop_loss_grad).any(),
         #                                                          np.isnan(causal_loss_grad).any(),
         #                                                          np.isnan(repeat_loss_grad).any()))
-
+        print("Epoch run time: {}".format(time.time() - ep_time))
+        print("Time since start of program: {}".format(time.time() - start))
     # coordinates learnt
-    y = W.dot((255-X)/255)
+    y = W.dot(X)
     print(y)
 
     # save weight
     print("Saving weights ... ")
     np.savetxt(args.fname, W, fmt='%f')
     print("Saved!")
-
+    print("Time taken by the program: {}".format(time.time() - start))
 
 if __name__ == "__main__":
     main()
