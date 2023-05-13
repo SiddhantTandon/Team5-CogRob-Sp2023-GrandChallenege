@@ -8,7 +8,7 @@ from multi_agent_sim_data import Two_Agent_Exchange_Location_Scenario
 
 class QLearner_Sim:
 
-    def __init__(self, goal_states, init_states, step_fun, reward_fun, mapping, grid_size=(10,10), max_steps = 20):
+    def __init__(self, goal_states, init_states, step_fun, reward_fun, mapping, grid_size=(5,5), max_steps = 20):
         self.goal_states = goal_states
         self.init_states = init_states
         self.current_states = init_states.copy()
@@ -28,7 +28,7 @@ class QLearner_Sim:
     def step(self, action):
         self.t += 1
         as_str = self.action_to_str(action)
-        new_state, reward = self.step_fun(self.current_states, self.goal_states, as_str, self.reward_fun,size=(5,5))
+        new_state, reward = self.step_fun(self.current_states, self.goal_states, as_str, self.reward_fun,size=(4,4))
         if new_state is None:
             new_state = self.current_states
             reward = (0,0)
@@ -44,17 +44,17 @@ class QLearner_Sim:
         #print("step with action: {} from {} gave reward {}".format(as_str, self.current_states, reward))
         self.current_states = new_state
         #TODO: set out to be the coordintate points of the agents
-        out = self.mapping @ out_img.flatten()
-        return out, reward[0]+reward[1], done, {"time_limit": self.t >= self.max_steps}
+        #out = self.mapping @ out_img.flatten()
+        return new_state.flatten(), reward[0]+reward[1], done, {"time_limit": self.t >= self.max_steps}
 
     def reset(self):
         self.current_states = self.init_states.copy()
         out_img = np.zeros(self.dims)
         out_img[self.current_states[0][0], self.current_states[0][1]] = 1
         out_img[self.current_states[1][0], self.current_states[1][1]] = 1
-        out = self.mapping @ out_img.flatten()
+        #out = self.mapping @ out_img.flatten()
         self.t = 0
-        return out
+        return self.current_states.flatten()
 
     def is_success(self):
         done = True
@@ -67,24 +67,26 @@ class QLearner_Sim:
         done = False
         i = 0
         rollout = []
+        path = []
         while i < steps and not done:
             out_img = np.zeros(self.dims)
             out_img[self.current_states[0][0], self.current_states[0][1]] = 1
             out_img[self.current_states[1][0], self.current_states[1][1]] = 1
-            obs = self.mapping @ out_img.flatten()
+            obs = self.current_states.flatten() #self.mapping @ out_img.flatten()
             action = best_action(obs)
             next_obs, reward, done, info = self.step(action)
             #TODO: make sure obs and next_obs are the coordinate points of the agents
-            rollout.append((obs, action, reward, next_obs, done))
+            path.append(action)
+            rollout.append((self.current_states.flatten(), action, reward, next_obs, done))
             i += 1
-        return rollout
+        return rollout, path
 
 def format_rollout(batch, mapping):
     rollouts = []
     for i in range(0,len(batch)-1):
         action_int = batch[i].action[0]*4 + batch[i].action[1]
         #TODO: make sure first and fourth entry of tuple are the coordinate points of the agents
-        rollouts.append((mapping @ batch[i].image, action_int, batch[i].reward[0] + batch[i].reward[1], mapping @ batch[i+1].image, False))
+        rollouts.append((batch[i].states.flatten(), action_int, batch[i].reward[0] + batch[i].reward[1], batch[i+1].states.flatten(), False))
     return rollouts
 
 if __name__ == "__main__":
@@ -92,11 +94,11 @@ if __name__ == "__main__":
     optimizer = optim.Rprop(nfq_net.parameters())
     nfq_agent = NFQAgent(nfq_net, optimizer)
     mapping = np.loadtxt("weights.txt")
-    init_states = np.array([[1,1],[8,8]])
-    goal_states = np.array([[8,8],[1,1]])
+    init_states = np.array([[1,1],[3,3]])
+    goal_states = np.array([[3,3],[1,1]])
     ma = Two_Agent_Exchange_Location_Scenario(goal_states)
-    batch, X = ma.simulate_function(10,
-                                    200)  # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
+    batch, X = ma.simulate_function(5,
+                                    30)  # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
     rollouts = format_rollout(batch, mapping)
     sim = QLearner_Sim(goal_states, init_states, step, reward_fcn, mapping)
     for i in range(0, 100):
@@ -110,9 +112,17 @@ if __name__ == "__main__":
             sim, False
         )
 
+        rollout, path = sim.generate_rollout(50, nfq_agent.get_best_action)
+        rollouts.extend(rollout)
+        batch, X = ma.simulate_function(5,
+                                        50)  # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
+        rollouts = format_rollout(batch, mapping)
+        rollouts.extend(rollout)
+
         if i % 10 == 0:
             print("epoch: {}, cost: {}, loss:{}".format(i, eval_episode_cost, loss))
-        rollouts.extend(sim.generate_rollout(sim.max_steps, nfq_agent.get_best_action))
+            print("path start: {}".format(path[:10]))
+
 
 
 

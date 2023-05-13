@@ -97,7 +97,7 @@ class Two_Agent_Exchange_Location_Scenario(DataFrame):
                 agent_coords[idx][1] = rt[1]
                 idx += 1
             grid.reshape(big_dim, 1)
-            mat_full[:,i] = np.divide(np.subtract(255,grid.reshape(big_dim)),255)
+            mat_full[:,i] = grid.reshape(grid_size*grid_size)
             dt = DataFrame(mat_full[:,i], tuple(actions), tuple(rewards), agent_coords)
             dataset.append(dt)
 

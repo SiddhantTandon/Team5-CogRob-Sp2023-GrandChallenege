@@ -34,6 +34,7 @@ def step(current_state, goal_state, actions, reward_fcn, size):
     
     #initialize array for updated state
     next_state = np.zeros(current_state.shape)
+    next_state = current_state.copy()
     
     for agent, agent_pos in enumerate(current_state):
         action = actions[agent]
