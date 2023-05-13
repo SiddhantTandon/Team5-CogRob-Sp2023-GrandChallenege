@@ -40,7 +40,7 @@ def step(current_state, goal_state, actions, reward_fcn, size):
         
         # "UP" Action:
         if action == "up":
-            if agent_pos[0] == size[1]: #check is movement violates state space bound
+            if agent_pos[0] == size[1]-1: #check is movement violates state space bound
                 break
             else:
                 next_state[agent] = agent_pos+(1,0) #determine next state
@@ -61,7 +61,7 @@ def step(current_state, goal_state, actions, reward_fcn, size):
         
         # "RIGHT" Action:
         if action == "right":
-            if agent_pos[1] == size[0]:
+            if agent_pos[1] == size[0]-1:
                 break
             else:
                 next_state[agent] = agent_pos+(0,1)
