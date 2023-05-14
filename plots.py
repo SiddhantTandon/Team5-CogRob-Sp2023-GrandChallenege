@@ -102,11 +102,14 @@ def main():
     # generate images from the simulator
     goals = [[3,3], [2,2]]
     ma = Two_Agent_Exchange_Location_Scenario(goals)
-    batch, X = ma.simulate_function(5, 500)
+    batch, X = ma.simulate_function(5, 1000)
 
     # # load the trained weights
     # W = np.loadtxt('siddhant_5grid_1000img_0015lr_300epochs.txt')
-    W = np.loadtxt('siddhant_weights_300epochs_0015la_1500imgs_5x5grid.txt')
+    #W = np.loadtxt('siddhant_weights_300epochs_0015la_1500imgs_5x5grid.txt')
+    #W = np.loadtxt('weights_single_agent_ver.txt')
+    W = np.loadtxt('weights_300_iter_700_size.txt')
+
 
     agent1_x = []
     agent1_y = []
@@ -146,15 +149,21 @@ def main():
     # TODO: ADD titles and more figues if necessary
     fig1 = plt.figure(1)
     hsv_modified = cm.get_cmap('hsv', 256)# create new hsv colormaps in range of 0.3 (green) to 0.7 (blue)
-    newcmp = ListedColormap(hsv_modified(np.linspace(0.2, 0.8, 256)))# show figure
+    newcmp = ListedColormap(hsv_modified(np.linspace(0.2, 0.8, 256)), name="True X Coord")# show figure
     # my_cmap = plt.get_cmap('hsv')
-    p = plt.scatter(w_agent2_x, w_agent2_y,c=(agent2_x),cmap=newcmp)
-    fig1.colorbar(p)
+    p = plt.scatter(w_agent1_y, w_agent2_y,c=(agent2_x),cmap=newcmp)
+    plt.xlabel("Agent 1 Component 2")
+    plt.ylabel("Agent 2 Component 2")
+
+
+
+    fig1.colorbar(p,label="True X Coord Agent 2")
     fig1.show()
+    #fig1.savefig("Agent2_YCoord_SingleAgent.png")
 
     fig2 = plt.figure(2)
     # plt.scatter(w_agent2_x, w_agent2_y, c=(agent2_y), cmap=my_cmap)
-    plt.scatter(agent2_x, agent2_y)
+    p#lt.scatter(agent2_x, agent2_y)
     fig2.show()
 
     input()

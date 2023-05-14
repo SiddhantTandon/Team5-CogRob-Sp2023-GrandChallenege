@@ -36,7 +36,7 @@ def main():
     # train data setup
     goals = [[4,4],[0,0]]
     ma = Two_Agent_Exchange_Location_Scenario(goals)
-    batch, X = ma.simulate_function(5, 1000) # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
+    batch, X = ma.simulate_function(5, 500) # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
 
     # Weight matrix setup
     agent_dim = 2 * 2 # each agent has 2D-SPACE: x-coordinate, y-coordinate
@@ -68,7 +68,7 @@ def main():
         #total_loss += multi_loss
 
         multi_loss = multi_same_prior_sol(batch, W)
-        total_loss += multi_loss
+        #total_loss += multi_loss
 
         # update weights
         W = W - args.alpha * total_loss

@@ -65,7 +65,8 @@ def repeatability_loss(batch,mapping):
                 causal_part = np.exp(-state_delta_mag(batch[i].image, batch[j].image, mapping))
                 delta1 = mapping@batch[i+1].image - mapping@batch[i].image
                 delta2 = mapping@batch[j+1].image - mapping@batch[j].image
-                total_loss += causal_part*(np.linalg.norm(delta2 - delta1)**2)
+                add = causal_part*(np.linalg.norm(delta2 - delta1)**2)
+                total_loss += add
     if pairings == 0:
         return 0
     return total_loss/time_steps
