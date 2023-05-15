@@ -10,3 +10,5 @@ Team 5 - Learning by Exploiting Structure and Fundamental Knowledge
 
 # Code Helpers
 python3 gradient_descent.py --iterations 1000 --learning_rate 0.01 --weight_name save_weights_test.txt
+
+python3 q_learning.py
