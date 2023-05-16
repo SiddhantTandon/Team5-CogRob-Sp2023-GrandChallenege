@@ -1,8 +1,7 @@
 # Author: Siddhant Tandon
-# CODE #
-########
+
 import numpy as np # array manipulation
-import argparse  # cli for user
+import argparse
 import random
 import time
 
@@ -32,18 +31,22 @@ def main():
     parser.add_argument('--weight_name', dest="fname", required=True, help="Please give the name of a .txt file to save weights")
 
     args = parser.parse_args()
-
+############################# 2 AGENTS ###############################
     # train data setup
     goals = [[4,4],[0,0]]
     ma = Two_Agent_Exchange_Location_Scenario(goals)
-    batch, X = ma.simulate_function(5, 500) # give all images X dim [100 {flattened image vector of 10x10 grid}, 25 {num images}]
+    # get all images X dim [25 {flattened image vector of 5x5 grid}, 400 {num images}]
+    batch, X = ma.simulate_function(5, 400)
 
     # Weight matrix setup
     agent_dim = 2 * 2 # each agent has 2D-SPACE: x-coordinate, y-coordinate
     W = np.random.uniform(0,1,[agent_dim,25])
 
-    start = time.time()
+
+    start = time.time() # timing the loop
     # gradient descent loop
+    prior_loss = 0
+    losses_saved = np.zeros(args.iterations)
     for i in range(0, args.iterations):
         ep_time = time.time()
         total_loss = 0
@@ -68,7 +71,8 @@ def main():
         #total_loss += multi_loss
 
         multi_loss = multi_same_prior_sol(batch, W)
-        #total_loss += multi_loss
+        total_loss += multi_loss
+
 
         # update weights
         W = W - args.alpha * total_loss
@@ -80,23 +84,29 @@ def main():
         m_loss = multi_agent_loss_same_act(batch,W)
         loss_total = t_loss + p_loss + c_loss + r_loss + m_loss
 
+        losses_saved[i] = loss_total
+        if abs(prior_loss - loss_total) < 0.0012:
+            print("Breaking loop! delta loss is lower than 0.0012")
+            break
+
+        prior_loss = loss_total
+
         # are we reducing loss?
-        # if i % 100 == 0:
         print("{}: {}_t + {}_p + {}_c + {}_r + {}_m = {}".format(i, t_loss, p_loss, c_loss, r_loss, m_loss, loss_total))
-        #print("temp: {}\nprop: {}\nCausal: {}\nRepeat: {}".format(np.isnan(temp_loss_grad).any(),
-        #                                                          np.isnan(prop_loss_grad).any(),
-        #                                                          np.isnan(causal_loss_grad).any(),
-        #                                                          np.isnan(repeat_loss_grad).any()))
+        # time keepers
         print("Epoch run time: {}".format(time.time() - ep_time))
         print("Time since start of program: {}".format(time.time() - start))
-    # coordinates learnt
-    y = W.dot(X)
-    print(y)
+
 
     # save weight
     print("Saving weights ... ")
     np.savetxt(args.fname, W, fmt='%f')
     print("Saved!")
+
+    print("Saving losses ... ")
+    np.savetxt('losses.txt', losses_saved, fmt='%f')
+    print("Saved!")
+
     print("Time taken by the program: {}".format(time.time() - start))
 
 if __name__ == "__main__":
