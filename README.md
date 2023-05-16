@@ -1,12 +1,13 @@
 # Project: Learning State Representations for Multi-Agent Systems from Multi-Agent Priors
-####Team 5 - Learning by Exploiting Structure and Fundamental Knowledge
-####CogRob-Spring2023-MIT
+#### Team 5 - Learning by Exploiting Structure and Fundamental Knowledge
+#### CogRob-Spring2023-MIT
 
 ### Requirements
 1. Python3
 2. Numpy
 3. Matplotlib
 4. Pandas
+5. Please go through the README under implementations_nfq
 
 
 ## Introduction
