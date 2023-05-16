@@ -6,165 +6,214 @@ from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 import numpy as np
 import random
 
-from multi_agent_sim_data import Two_Agent_Exchange_Location_Scenario
 
-
-class Generator():
+class SampleDataFrame():
     '''
-    Class to try different sampling techniques instead of using multi_agent_sim_data
-    data set images.
-    The commented out code in main() can be used to test and generate coordinates.
+    Class dataframe to save
+    1. image
+    2. Agent 1 x coord
+    3. Agent 1 y coord
+    4. Agent 2 x coord
+    5. Agent 2 y coord
     '''
-    def __init__(self, N, dim):
-        self.number = N
-        self.dim = dim
+    def __init__(self, image, ax1, ay1, ax2, ay2):
+        self.image = image
+        self.ax1 = ax1
+        self.ay1 = ay1
+        self.ax2 = ax2
+        self.ay2 = ay2
 
-    def travel_function(self, grid, x_prev, y_prev, step):
 
-        if step == 1:
-            y = y_prev + 1
-            x = x_prev
-        elif step == 2:
-            y = y_prev - 1
-            x = x_prev
-        elif step == 3:
-            x = x_prev - 1
-            y = y_prev
-        elif step == 4:
-            x = x_prev + 1
-            y = y_prev
-        try:
-            grid[x][y] = 1
-        except:
-            return 100,100,grid
-        return x,y,grid
+class Sampler():
+    '''
+    Class with methods for sampling the envrionment state space
 
-    def movements(self, initial_states):
+    Attributes:
+    1. agents = 2 (constant)
+    2. dim = size of grid
+    3. count = number of samples
+
+    Methods:
+    1. simulation samples
+    '''
+
+    def __init__(self, grid_size, N):
+        self.agents = 2
+        self.dim = grid_size
+        self.count = N
+
+    def simulate_samples(self):
         '''
-        Using numpy random choices to generate the full sequence in one shot.
-        Can be changed to some other sampling techniques
+        input: self
+        output:
+        1. dataset - list of SampleDataFrame objects,
+        2. mat_full - Matrix of flattened images
         '''
-        c = [1,2,3,4]
-        mat_full = np.zeros([self.dim * self.dim, self.number])
-        a1 = random.choices(c, k=self.number)
-        a2 = random.choices(c, k=self.number)
-        x1 = initial_states[0][0]
-        y1 = initial_states[0][1]
-        x2 = initial_states[1][0]
-        y2 = initial_states[1][1]
+        c = [0,1,2,3,4] # used to create choices in the grid space
+        mat_full = np.zeros([self.dim * self.dim, self.count])
+
+        init_loc = [[1,1], [4,4]]
         arr = np.zeros(self.dim * self.dim)
         grid = arr.reshape(self.dim, self.dim)
-        grid[x1][y1] = 1
-        grid[x2][y2] = 1
+        grid[init_loc[0][0]][init_loc[0][1]] = 1
+        grid[init_loc[1][0]][init_loc[1][1]] = 1
         mat_full[:,0] = grid.reshape(self.dim * self.dim)
 
-        # states
-        ax1 = []
-        ay1 = []
-        ax2 = []
-        ay2 = []
-        ax1.append(x1)
-        ay1.append(y1)
-        ax2.append(x2)
-        ay2.append(y2)
+        dataset = []
+        dt = SampleDataFrame(mat_full[:,0],init_loc[0][0], init_loc[0][1], init_loc[1][0], init_loc[1][1] )
+        dataset.append(dt)
 
-        for i in range(1, self.number):
+        for i in range(1, self.count):
+
+
+            x1 = random.choices(c, k=1)
+            y1 = random.choices(c, k=1)
+
+            x2 = random.choices(c, k=1)
+            y2 = random.choices(c, k=1)
+
+            p = [x1[0],y1[0]]
+            p2 = [x2[0], y2[0]]
+
+            while (p == p2):
+                x2 = random.choices(c, k=1)
+                y2 = random.choices(c, k=1)
+                p2 = [x2[0], y2[0]]
+
             arr = np.zeros(self.dim * self.dim)
             grid = arr.reshape(self.dim, self.dim)
-            for d in range(0,2):
-                if d % 2 == 0:
-                    x,y,grid = self.travel_function(grid, x1, y1, a1[i-1])
-                    while (x < 0 or x > 4 or y < 0 or y > 4):
-                        a_re = random.choices(c, k=1)
-                        x,y,grid = self.travel_function(grid, x1, y1, a_re[0])
-                    x1 = x
-                    y1 = y
-                    ax1.append(x)
-                    ay1.append(y)
-                else:
-                    x,y,grid = self.travel_function(grid, x2, y2, a2[i-1])
-                    while (x < 0 or x > 4 or y < 0 or y > 4):
-                        a_re = random.choices(c, k=1)
-                        x,y,grid = self.travel_function(grid, x2, y2, a_re[0])
-                    x2 = x
-                    y2 = y
-                    ax2.append(x)
-                    ay2.append(y)
+            grid[x1[0]][y1[0]] = 1
+            grid[x2[0]][y2[0]] = 1
             mat_full[:,i] = grid.reshape(self.dim * self.dim)
+            dt = SampleDataFrame(mat_full[:,i],x1[0], y1[0], x2[0], y2[0] )
+            dataset.append(dt)
 
-        return mat_full, ax1, ay1, ax2, ay2
-
-
+        return dataset, mat_full
 
 
 def main():
 
-    # generate images from the simulator
-    goals = [[3,3], [2,2]]
-    ma = Two_Agent_Exchange_Location_Scenario(goals)
-    batch, X = ma.simulate_function(5, 1000)
+    ################################################
+    sa = Sampler( 5, 50000)
+    batch, X = sa.simulate_samples()
 
     # # load the trained weights
-    # W = np.loadtxt('siddhant_5grid_1000img_0015lr_300epochs.txt')
-    #W = np.loadtxt('siddhant_weights_300epochs_0015la_1500imgs_5x5grid.txt')
-    #W = np.loadtxt('weights_single_agent_ver.txt')
-    W = np.loadtxt('weights_300_iter_700_size.txt')
+    W1 = np.loadtxt('siddhant_weights_400img_1000epochs_0025lr_5x5grid.txt')
+    W3 = np.loadtxt('siddhant_weights_400img_3000epochs_0025lr_5x5grid.txt')
+    W2 = np.loadtxt('siddhant_weights_400img_2000epochs_0025lr_5x5grid.txt')
 
 
     agent1_x = []
     agent1_y = []
     agent2_x = []
     agent2_y = []
-    w_agent1_x = []
-    w_agent1_y = []
-    w_agent2_x = []
-    w_agent2_y = []
+    w1_agent1_x = []
+    w1_agent1_y = []
+    w1_agent2_x = []
+    w1_agent2_y = []
+    w2_agent1_x = []
+    w2_agent1_y = []
+    w2_agent2_x = []
+    w2_agent2_y = []
+    w3_agent1_x = []
+    w3_agent1_y = []
+    w3_agent2_x = []
+    w3_agent2_y = []
+
     for b in batch:
-        weight_coords = W.dot(b.image)
-        w_agent1_x.append(weight_coords[0])
-        w_agent1_y.append(weight_coords[1])
-        w_agent2_x.append(weight_coords[2])
-        w_agent2_y.append(weight_coords[3])
-        agent1_x.append(b.states[0][0])
-        agent1_y.append(b.states[0][1])
-        agent2_x.append(b.states[1][0])
-        agent2_y.append(b.states[1][1])
+        weight_coords1 = W1.dot(b.image)
+        weight_coords2 = W2.dot(b.image)
+        weight_coords3 = W3.dot(b.image)
+        w1_agent1_x.append(weight_coords1[0])
+        w1_agent1_y.append(weight_coords1[1])
+        w1_agent2_x.append(weight_coords1[2])
+        w1_agent2_y.append(weight_coords1[3])
+        w2_agent1_x.append(weight_coords2[0])
+        w2_agent1_y.append(weight_coords2[1])
+        w2_agent2_x.append(weight_coords2[2])
+        w2_agent2_y.append(weight_coords2[3])
+        w3_agent1_x.append(weight_coords3[0])
+        w3_agent1_y.append(weight_coords3[1])
+        w3_agent2_x.append(weight_coords3[2])
+        w3_agent2_y.append(weight_coords3[3])
+        agent1_x.append(b.ax1)
+        agent1_y.append(b.ay1)
+        agent2_x.append(b.ax2)
+        agent2_y.append(b.ay2)
 
 
-    # gen = Generator(100001, 5)
-    # X2,ax1,ay1,ax2,ay2 = gen.movements(goals)
-    # w_agent1_x1 = []
-    # w_agent1_y1 = []
-    # w_agent2_x2 = []
-    # w_agent2_y2 = []
-    #
-    # for idx, img in enumerate(X2):
-    #     wcoords2 = W.dot(X2[:,idx])
-    #     w_agent1_x1.append(wcoords2[0])
-    #     w_agent1_y1.append(wcoords2[1])
-    #     w_agent2_x2.append(wcoords2[2])
-    #     w_agent2_y2.append(wcoords2[3])
 
-    # plotting happes here - DRAFT
-    # TODO: ADD titles and more figues if necessary
     fig1 = plt.figure(1)
-    hsv_modified = cm.get_cmap('hsv', 256)# create new hsv colormaps in range of 0.3 (green) to 0.7 (blue)
-    newcmp = ListedColormap(hsv_modified(np.linspace(0.2, 0.8, 256)), name="True X Coord")# show figure
-    # my_cmap = plt.get_cmap('hsv')
-    p = plt.scatter(w_agent1_y, w_agent2_y,c=(agent2_x),cmap=newcmp)
-    plt.xlabel("Agent 1 Component 2")
+    hsv_modified = cm.get_cmap('hsv', 256)# create new hsv colormaps
+    newcmp = ListedColormap(hsv_modified(np.linspace(0.2, 0.8, 256)))
+    p1p = plt.scatter(w1_agent1_x, w1_agent1_y,c=(agent1_x),cmap=newcmp)
+    plt.title("Mapped Coordinates - 400I, 0.0025LR, 1000E")
+    plt.xlabel("Agent 2 Component 1")
     plt.ylabel("Agent 2 Component 2")
-
-
-
-    fig1.colorbar(p,label="True X Coord Agent 2")
+    fig1.colorbar(p1p,label="True X Coord Agent 2")
     fig1.show()
-    #fig1.savefig("Agent2_YCoord_SingleAgent.png")
+
+
 
     fig2 = plt.figure(2)
-    # plt.scatter(w_agent2_x, w_agent2_y, c=(agent2_y), cmap=my_cmap)
-    p#lt.scatter(agent2_x, agent2_y)
+    p2p = plt.scatter(w2_agent1_x, w2_agent1_y, c=(agent1_x), cmap=newcmp)
+    plt.title("Mapped Coordinates - 400I, 0.0025LR, 2000E")
+    plt.xlabel("Agent 2 Component 1")
+    plt.ylabel("Agent 2 Component 2")
+    fig2.colorbar(p2p,label="True X Coord Agent 2")
     fig2.show()
+
+
+
+    fig3 = plt.figure(3)
+    p3p = plt.scatter(w3_agent1_x, w3_agent1_y, c=(agent1_x), cmap=newcmp)
+    plt.title("Mapped Coordinates - 400I, 0.0025LR, 3000E")
+    plt.xlabel("Agent 2 Component 1")
+    plt.ylabel("Agent 2 Component 2")
+    fig3.colorbar(p3p,label="True X Coord Agent 2")
+    fig3.show()
+
+
+    fig4 = plt.figure(4)
+    p4p = plt.scatter(w1_agent1_x, w1_agent1_y,c=(agent1_y),cmap=newcmp)
+    plt.title("Mapped Coordinates - 400I, 0.0025LR, 1000E")
+    plt.xlabel("Agent 2 Component 1")
+    plt.ylabel("Agent 2 Component 2")
+    fig4.colorbar(p4p,label="True X Coord Agent 2")
+    fig4.show()
+
+
+
+    fig5 = plt.figure(5)
+    p5p = plt.scatter(w2_agent1_x, w2_agent1_y, c=(agent1_y), cmap=newcmp)
+    plt.title("Mapped Coordinates - 400I, 0.0025LR, 2000E")
+    plt.xlabel("Agent 2 Component 1")
+    plt.ylabel("Agent 2 Component 2")
+    fig5.colorbar(p5p,label="True X Coord Agent 2")
+    fig5.show()
+
+
+
+    fig6 = plt.figure(6)
+    p6p = plt.scatter(w3_agent1_x, w3_agent1_y, c=(agent1_y), cmap=newcmp)
+    plt.title("Mapped Coordinates - 400I, 0.0025LR, 3000E")
+    plt.xlabel("Agent 2 Component 1")
+    plt.ylabel("Agent 2 Component 2")
+    fig6.colorbar(p6p,label="True X Coord Agent 2")
+    fig6.show()
+
+
+    # Plotting the losses
+    fig7 = plt.figure(7)
+    losses = np.loadtxt('losses.txt')
+    epochs = np.linspace(0,500,500)
+
+    plt.plot(epochs, losses)
+    plt.title("Gradient Descent Loss for 500 Epochs")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    fig7.show()
+
 
     input()
 
